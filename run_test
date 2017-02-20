@@ -2,7 +2,7 @@
 DATE=`date`
 TABLE=`md5 -s "$DATE"|awk -F \= '{print $2}'`
 
-echo $TABLE
+echo "We'll create and then delete a table called: "$TABLE
 # Create a table to use, we're adding an automatic timestamp too
 # which is slower than it could be if we removed it!
 mysql -u root $USER -e "CREATE TABLE $TABLE ( \
