@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Create a table to use, we're adding an automatic timestamp too
+# which is slower than it could be if we removed it!
+mysql -u root $USER -e "DROP TABLE IF EXISTS 'inventory'; \
+CREATE TABLE 'inventory' ( \
+  'sku' VARCHAR(20) NOT NULL, \
+  'location' INT NOT NULL, \
+  'datestamp' DATETIME NULL DEFAULT NOW(), \
+  'quantity' INT NULL, \
+  PRIMARY KEY ('sku', 'location'), \
+  UNIQUE INDEX 'sku_UNIQUE' ('sku' ASC));"
+
+# If we have no data to use, create some. A million rows is
+# probably a good approximation of the upper limit we'd need
+i="0"
+if [ -f inventory.csv ]
+	then
+ 		echo "inventory.csv exists, skipping creation."
+	else
+	while [ $i -lt 1000000 ]
+		do
+			QUANTITY=$((1 + RANDOM % 1000))
+			echo $i,10,$QUANTITY >> inventory.csv
+			i=$[$i+1]
+		done
+fi
+
+# Now we'll load the data into the table and time the whole thing
+echo "Starting Load at "`date`
+time mysql --local-infile=1 -u root $USER -e "LOAD DATA LOCAL INFILE '$PWD/inventory.csv' \
+INTO TABLE inventory (sku,location,quantity)"
+echo "Ending Load at "`date`
