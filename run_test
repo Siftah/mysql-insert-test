@@ -1,15 +1,17 @@
 #!/bin/bash
+DATE=`date`
+TABLE=`md5 -s "$DATE"|awk -F \= '{print $2}'`
 
+echo $TABLE
 # Create a table to use, we're adding an automatic timestamp too
 # which is slower than it could be if we removed it!
-mysql -u root $USER -e "DROP TABLE IF EXISTS 'inventory'; \
-CREATE TABLE 'inventory' ( \
-  'sku' VARCHAR(20) NOT NULL, \
-  'location' INT NOT NULL, \
-  'datestamp' DATETIME NULL DEFAULT NOW(), \
-  'quantity' INT NULL, \
-  PRIMARY KEY ('sku', 'location'), \
-  UNIQUE INDEX 'sku_UNIQUE' ('sku' ASC));"
+mysql -u root $USER -e "CREATE TABLE $TABLE ( \
+  sku VARCHAR(20) NOT NULL, \
+  location INT NOT NULL, \
+  datestamp DATETIME NULL DEFAULT NOW(), \
+  quantity INT NULL, \
+  PRIMARY KEY (sku, location), \
+  UNIQUE INDEX sku_UNIQUE (sku ASC));"
 
 # If we have no data to use, create some. A million rows is
 # probably a good approximation of the upper limit we'd need
@@ -31,3 +33,4 @@ echo "Starting Load at "`date`
 time mysql --local-infile=1 -u root $USER -e "LOAD DATA LOCAL INFILE '$PWD/inventory.csv' \
 INTO TABLE inventory (sku,location,quantity)"
 echo "Ending Load at "`date`
+mysql -u root $USER -e "DROP TABLE IF EXISTS $TABLE;"
